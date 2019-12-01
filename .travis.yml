@@ -516,6 +516,13 @@ matrix:
       addons:
         <<: *addons-9
 
+    - os: osx
+      env: CLANG_RUNTIME=9 LLVMLAB_CLANG_ASSERTS=clang-r354636-b54157 CXX=clang++ CC=clang
+      osx_image: xcode9.4
+      compiler: clang
+      addons:
+        <<: *addons-9
+
     # Ubuntu, GCC 5
     - env: CLANG_RUNTIME=9 CXX=g++-5 CC=gcc
       compiler: gcc
@@ -660,6 +667,16 @@ install:
     # Add -H to silence 'The directory '/Users/travis/.../pip/http' or its parent
     # directory is not owned by the current user and the cache has been disabled.
     sudo -H pip install lit # LLVM lit is not part of the llvm releases...
+
+    # Fetch clang with RelWithDebInfo which is very useful as it has asserts on
+    # This allows us to verify if clad produces correct AST.
+    if [ -n "$LLVMLAB_CLANG_ASSERTS" ]; then
+      git clone https://github.com/llvm-mirror/zorg.git zorg
+      cd zorg/llvmbisect
+      sudo python setup.py install
+      llvmlab fetch clang-stage1-configure-RA $LLVMLAB_CLANG_ASSERTS
+      export CLANG=$(pwd)/$LLVMLAB_CLANG_ASSERTS
+    fi
 
 before_script:
   - cmake --version
